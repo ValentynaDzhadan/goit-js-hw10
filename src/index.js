@@ -1,9 +1,8 @@
 import { fetchCountries } from './js/fetchCountries';
-// import {
-//   createMarkupCountryList,
-//   createMarkupCountryInfo,
-//   renderCountryCard,
-// } from './js/cardMarkup';
+import {
+  createMarkupCountryList,
+  createMarkupCountryInfo,
+} from './js/cardMarkup';
 import './css/styles.css';
 import Notiflix from 'notiflix';
 import debounce from 'lodash.debounce';
@@ -22,44 +21,42 @@ function onSearch(e) {
   const searchQuery = e.target.value.trim();
 
   fetchCountries(searchQuery)
-    // .then(data => {
-    //   console.log(data);
-    // })
     .then(data => {
-      renderCountryCard(data);
+      if (data.length > 10) {
+        resetCountryList();
+        resetCountryInfo();
+        Notiflix.Notify.info(
+          'Too many matches found. Please enter a more specific name.'
+        );
+      } else {
+        renderCountryCard(data);
+      }
     })
     .catch(onFetchError);
+}
+
+function resetCountryList() {
+  refs.countryListEl.innerHTML = '';
+}
+function resetCountryInfo() {
+  refs.countryInfoEl.innerHTML = '';
 }
 
 function renderCountryCard(data) {
   const markupCountryList = createMarkupCountryList(data);
   refs.countryListEl.innerHTML = markupCountryList;
-
-  const markupCountryInfo = createMarkupCountryInfo(data);
-  refs.countryInfoEl.innerHTML = markupCountryInfo;
-}
-
-function createMarkupCountryList(data) {
-  return data
-    .map(({ flags, name }) => {
-      `<li>
-        <img src="${flags.svg}" alt="${name.official}">
-        <p>${name.official}</p>
-      </li>`;
-    })
-    .join('');
-}
-
-function createMarkupCountryInfo(data) {
-  return data
-    .map(({ capital, population, languages }) => {
-      `<li>Capital: ${capital}</li>
-        <li>Population: ${population}</li>
-        <li>Languages: ${languages}</li>`;
-    })
-    .join('');
+  if (data.length === 1) {
+    refs.countryListEl.classList.add('uniqueCountry');
+    const markupCountryInfo = createMarkupCountryInfo(data);
+    refs.countryInfoEl.innerHTML = markupCountryInfo;
+  } else {
+    refs.countryListEl.classList.remove('uniqueCountry');
+    resetCountryInfo();
+  }
 }
 
 function onFetchError(error) {
+  resetCountryList();
+  resetCountryInfo();
   Notiflix.Notify.failure('Oops, there is no country with that name');
 }
